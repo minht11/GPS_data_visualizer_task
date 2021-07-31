@@ -9,7 +9,8 @@ namespace GPS_data_visualizer_task.GpsParsers
         private static HashSet<IParser> Parsers = new()
         {
             new JsonParser(),
-            new CsvParser()
+            new CsvParser(),
+            new BinParser(),
         };
         static public bool IsSupportedFile(string filepath)
         {

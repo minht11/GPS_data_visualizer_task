@@ -22,7 +22,7 @@ namespace GPS_data_visualizer_task.GpsParsers
                 int i = 0;
                 data.Latitude = Convert.ToDouble(splitLine[i++]);
                 data.Longitude = Convert.ToDouble(splitLine[i++]);
-                data.GpsTime = Convert.ToString(splitLine[i++]);
+                data.GpsTime = Convert.ToDateTime(splitLine[i++]);
                 data.Speed = Convert.ToInt32(splitLine[i++]);
                 data.Angle = Convert.ToInt32(splitLine[i++]);
                 data.Altitude = Convert.ToInt32(splitLine[i++]);

@@ -12,11 +12,12 @@ namespace GPS_data_visualizer_task
             Console.WriteLine("Enter absolute file locations");
             Console.WriteLine($"Type '{BEGIN_PARSE_COMMAND}' once you done to begin parsing");
 
-            //string path = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\test.json";
-            string path = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\test.csv";
+            string path = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-07.json";
+            //string path = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-08.csv";
+            //string path = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-09.bin";
 
             var data = GpsParsers.GpsParser.Parse(path);
-            Console.WriteLine($"{data[0].Latitude} {data[0].Speed} {data[0].Satellites}");
+            Console.WriteLine($"{data[0].Latitude} {data[0].GpsTime} {data[0].Satellites}");
 
             //HashSet<string> filePaths = new();
 
