@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using Geolocation;
 
 namespace GPS_data_visualizer_task
 {
@@ -10,18 +10,15 @@ namespace GPS_data_visualizer_task
     {
         static void Main(string[] args)
         {
-            const string BEGIN_PARSE_COMMAND = "parse";
-            Console.WriteLine("Enter absolute file paths");
-            Console.WriteLine($"Type '{BEGIN_PARSE_COMMAND}' once you done to begin parsing");
+            //List<string> paths = new()
+            //{
+            //    @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-07.json",
+            //    @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-08.csv",
+            //    @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-09.bin",
+            //};
 
-            List<string> paths = new()
-            {
-                @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-07.json",
-                @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-08.csv",
-                @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-09.bin",
-            };
-
-            var data = paths.SelectMany((p) => GpsParsers.GpsParser.Parse(p)).ToList();
+            var paths = getInputedPaths();
+            var data = paths.SelectMany(GpsParsers.GpsParser.Parse).ToList();
 
             var satelitesList = data.Select((item) => item.Satellites).ToList();
             var speedList = data.Select((item) => item.Speed).ToList();
@@ -37,32 +34,94 @@ namespace GPS_data_visualizer_task
                 title: "Speed histogram",
                 valuesTitle: "hits");
 
-            //HashSet<string> filePaths = new();
+            Console.WriteLine();
+            displayShortestRoadStripInfo(data, 100);
+        }
 
-            //while(true)
-            //{
-            //    string value = Console.ReadLine();
-            //    if (BEGIN_PARSE_COMMAND.Equals(value))
-            //    {
-            //        Console.WriteLine("YOOOOO");
-            //        break;
-            //    }
+        static private HashSet<string> getInputedPaths()
+        {
+            const string BEGIN_PARSE_COMMAND = "parse";
+            Console.WriteLine("Enter absolute file path, press 'Enter' to input additional ones");
+            Console.WriteLine($"Type '{BEGIN_PARSE_COMMAND}' to begin parsing");
 
-            //    if (isSupportedFile(value) && File.Exists(value))
-            //    {
-            //        filePaths.Add(value);
-            //    } else
-            //    {
-            //        Console.WriteLine("This is not a valid file");
-            //    }
-            //}
+            HashSet<string> filePaths = new();
 
-            //foreach (var path in filePaths)
-            //{
-            //    var a = Parser.parse(path);
-            //    var b = a[0];
-            //    Console.WriteLine(b);
-            //}
+            while (true)
+            {
+                string value = Console.ReadLine();
+                if (BEGIN_PARSE_COMMAND.Equals(value))
+                {
+                    break;
+                }
+
+                if (!File.Exists(value))
+                {
+                    Console.WriteLine("No file found at inputed location");
+                }
+                else if (!GpsParsers.GpsParser.IsSupportedFile(value))
+                {
+                    Console.WriteLine("File type is not supported");
+                }
+                else
+                {
+                    filePaths.Add(value);
+                }
+            }
+
+            return filePaths;
+        }
+
+        static private void displayShortestRoadStripInfo(List<GpsData> data, double roadDistance)
+        {
+            TimeSpan shortestTime = TimeSpan.MaxValue;
+            Tuple<double, GpsData, GpsData> fastestData = null;
+
+            for (int i = 0; i < data.Count; i += 1)
+            {
+                GpsData startingCoord = data[i];
+                GpsData coord = startingCoord;
+
+                double distance = 0;
+
+                for (int j = i + 1; j < data.Count; j += 1)
+                {
+                    GpsData nextCoord = data[j];
+                    distance += GeoCalculator.GetDistance(
+                        coord.Latitude,
+                        coord.Longitude,
+                        nextCoord.Latitude,
+                        nextCoord.Longitude,
+                        1,
+                        DistanceUnit.Kilometers);
+                    coord = nextCoord;
+                    TimeSpan time = coord.GpsTime - startingCoord.GpsTime;
+                    bool isMoreThanShortestTime = time > shortestTime;
+                    if (distance >= roadDistance || isMoreThanShortestTime)
+                    {
+                        if (!isMoreThanShortestTime)
+                        {
+                            shortestTime = time;
+                            fastestData = Tuple.Create(distance, startingCoord, coord);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (fastestData != null)
+            {
+                Console.WriteLine($"Fastest road section of at least 100km was driven over {shortestTime.TotalSeconds:f3}s and was {fastestData.Item1:f3}km long.");
+
+                const string startWord = "Start";
+                Console.WriteLine($"{startWord} position {fastestData.Item2.Latitude}; {fastestData.Item2.Longitude}");
+                Console.WriteLine($"{startWord} gps time {fastestData.Item2.GpsTime}");
+
+                string endWord = "End".PadRight(startWord.Length, ' ');
+                Console.WriteLine($"{endWord} position {fastestData.Item3.Latitude}; {fastestData.Item3.Longitude}");
+                Console.WriteLine($"{endWord} gps time {fastestData.Item3.GpsTime}");
+
+                Console.Write($"Average speed: {fastestData.Item1 / shortestTime.TotalHours:f1}km/h");
+            }
         }
     }
 }
