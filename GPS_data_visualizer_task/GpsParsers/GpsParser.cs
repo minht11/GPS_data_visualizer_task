@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -6,7 +7,7 @@ namespace GPS_data_visualizer_task.GpsParsers
 {
     class GpsParser
     {
-        private static HashSet<IParser> Parsers = new()
+        private static List<IParser> Parsers = new()
         {
             new JsonParser(),
             new CsvParser(),
@@ -20,16 +21,16 @@ namespace GPS_data_visualizer_task.GpsParsers
 
         static public List<GpsData> Parse(string filepath)
         {
-            List<GpsData> data = new();
             string ext = Path.GetExtension(filepath);
             foreach (var parser in Parsers)
             {
                 if (parser.Supports(ext))
                 {
-                    data = parser.Parse(filepath);
+                    return parser.Parse(filepath);
                 }
             }
-            return data;
+
+            throw new ArgumentException("No parsers support this file type.");
         }
     }
 }

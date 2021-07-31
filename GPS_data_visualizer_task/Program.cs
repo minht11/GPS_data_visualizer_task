@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
 
 namespace GPS_data_visualizer_task
 {
@@ -9,15 +11,31 @@ namespace GPS_data_visualizer_task
         static void Main(string[] args)
         {
             const string BEGIN_PARSE_COMMAND = "parse";
-            Console.WriteLine("Enter absolute file locations");
+            Console.WriteLine("Enter absolute file paths");
             Console.WriteLine($"Type '{BEGIN_PARSE_COMMAND}' once you done to begin parsing");
 
-            string path = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-07.json";
-            //string path = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-08.csv";
-            //string path = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-09.bin";
+            List<string> paths = new()
+            {
+                @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-07.json",
+                @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-08.csv",
+                @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-09.bin",
+            };
 
-            var data = GpsParsers.GpsParser.Parse(path);
-            Console.WriteLine($"{data[0].Latitude} {data[0].GpsTime} {data[0].Satellites}");
+            var data = paths.SelectMany((p) => GpsParsers.GpsParser.Parse(p)).ToList();
+
+            var satelitesList = data.Select((item) => item.Satellites).ToList();
+            var speedList = data.Select((item) => item.Speed).ToList();
+
+            Console.Clear();
+            Histograms.DrawVertical(satelitesList, 10, "hits");
+
+            Console.WriteLine();
+            Histograms.DrawHorizontalRanges(
+                data: speedList,
+                intervalSize: 10,
+                width: 20,
+                title: "Speed histogram",
+                valuesTitle: "hits");
 
             //HashSet<string> filePaths = new();
 

@@ -20,7 +20,6 @@ namespace GPS_data_visualizer_task.GpsParsers
 
             Func<int, byte[]> readBytes = (size) =>
             {
-
                 var splicedBytes = bytes.Skip(offset).Take(size);
                 offset += size;
 
