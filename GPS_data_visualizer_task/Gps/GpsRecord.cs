@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace GPS_data_visualizer_task
+namespace GPS_data_visualizer_task.Gps
 {
-    class GpsData
+    class GpsRecord
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }

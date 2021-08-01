@@ -6,10 +6,11 @@ namespace GPS_data_visualizer_task
 {
     class Histograms
     {
-        static private Dictionary<int, int> getDictionaryFromList(List<int> list, Func<int, int> groupFn)
+        static protected Dictionary<int, int> getDictionaryFromList(List<int> list, Func<int, int> groupFn)
         {
             return list.GroupBy(groupFn).ToDictionary((item) => item.Key, (item) => item.Count());
         }
+
         static public void DrawVertical(List<int> dataList, int height, string yAxisName)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -58,7 +59,7 @@ namespace GPS_data_visualizer_task
             Console.Write("\n");
         }
 
-        static public void DrawHorizontalRanges(List<int> data, int intervalSize, int width, string title, string valuesTitle)
+        static public void DrawHorizontalRanges(List<int> data, int intervalSize, int width, string title, string valuesLabel)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
@@ -68,7 +69,7 @@ namespace GPS_data_visualizer_task
 
             int maxKey = groupedData.Keys.Max();
             int maxValue = groupedData.Values.Max();
-            int cellWidth = maxValue / width;
+            double cellWidth = 1.0 * maxValue / width;
 
             int maxRangesDigitsCount = $"{maxKey}".Length;
 
@@ -81,20 +82,20 @@ namespace GPS_data_visualizer_task
                 string leftRange = $"{key}".PadLeft(maxRangesDigitsCount, ' ');
                 string rightRange = $"{key + intervalSize - 1}".PadLeft(maxRangesDigitsCount, ' ');
 
-                string bar = "";
-                for (int i = 0; i < width; i += 1)
-                {
-                    bar += (i * cellWidth <= value) && (value != 0) ? '▒' : ' ';
-                }
+                int barFilledWidth = Convert.ToInt32(Math.Ceiling(value / cellWidth));
+                string bar = "".PadRight(barFilledWidth, '▒').PadRight(width, ' ');
 
                 string mainContentLine = $"[{leftRange} - {rightRange}] ¦ {bar} ";
                 if (!isTitleDrawed)
                 {
                     isTitleDrawed = true;
-                    var maxLen = mainContentLine.Length;
+
                     title += " ";
+                    int maxLen = mainContentLine.Length;
+
+                    // Make sure title always fills the available space, otherwise trim it.
                     string mainTitle = title.Length <= maxLen ? title.PadRight(maxLen, '─') : title.Substring(0, maxLen);
-                    Console.WriteLine($"{mainTitle}¦ {valuesTitle}");
+                    Console.WriteLine($"{mainTitle}¦ {valuesLabel}");
                 }
 
                 string line = $"{mainContentLine}¦ {value}";

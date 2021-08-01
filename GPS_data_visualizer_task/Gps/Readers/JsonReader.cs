@@ -2,18 +2,18 @@
 using System.Text.Json;
 using System.IO;
 
-namespace GPS_data_visualizer_task.GpsParsers
+namespace GPS_data_visualizer_task.Gps.Readers
 {
-    class JsonParser : IParser
+    class JsonReader : IReader
     {
         public bool Supports(string ext)
         {
             return ext.Equals(".json");
         }
-        public List<GpsData> Parse(string filepath)
+        public List<GpsRecord> Parse(string filepath)
         {
             string jsonString = File.ReadAllText(filepath);
-            return JsonSerializer.Deserialize<List<GpsData>>(jsonString);
+            return JsonSerializer.Deserialize<List<GpsRecord>>(jsonString);
         }
     }
 }

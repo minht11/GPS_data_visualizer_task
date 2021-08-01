@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Geolocation;
+using GPS_data_visualizer_task.Gps;
 
 namespace GPS_data_visualizer_task
 {
@@ -10,15 +11,16 @@ namespace GPS_data_visualizer_task
     {
         static void Main(string[] args)
         {
+            //string basePath = @"D:\Development\C#\GPS_data_visualizer_task\gps-data\";
             //List<string> paths = new()
             //{
-            //    @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-07.json",
-            //    @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-08.csv",
-            //    @"D:\Development\C#\GPS_data_visualizer_task\gps-data\2019-09.bin",
+            //    $@"{basePath}2019-07.json",
+            //    $@"{basePath}2019-08.csv",
+            //    $@"{basePath}2019-09.bin",
             //};
 
             var paths = getInputedPaths();
-            var data = paths.SelectMany(GpsParsers.GpsParser.Parse).ToList();
+            var data = paths.SelectMany(GpsReader.Read).ToList();
 
             var satelitesList = data.Select((item) => item.Satellites).ToList();
             var speedList = data.Select((item) => item.Speed).ToList();
@@ -32,7 +34,7 @@ namespace GPS_data_visualizer_task
                 intervalSize: 10,
                 width: 20,
                 title: "Speed histogram",
-                valuesTitle: "hits");
+                valuesLabel: "hits");
 
             Console.WriteLine();
             displayShortestRoadStripInfo(data, 100);
@@ -41,8 +43,8 @@ namespace GPS_data_visualizer_task
         static private HashSet<string> getInputedPaths()
         {
             const string BEGIN_PARSE_COMMAND = "parse";
-            Console.WriteLine("Enter absolute file path, press 'Enter' to input additional ones");
-            Console.WriteLine($"Type '{BEGIN_PARSE_COMMAND}' to begin parsing");
+            Console.WriteLine("Enter absolute file path and press 'Enter'");
+            Console.WriteLine($"Once finished type '{BEGIN_PARSE_COMMAND}' to begin parsing");
 
             HashSet<string> filePaths = new();
 
@@ -58,34 +60,35 @@ namespace GPS_data_visualizer_task
                 {
                     Console.WriteLine("No file found at inputed location");
                 }
-                else if (!GpsParsers.GpsParser.IsSupportedFile(value))
+                else if (!GpsReader.IsSupportedFile(value))
                 {
                     Console.WriteLine("File type is not supported");
                 }
                 else
                 {
                     filePaths.Add(value);
+                    Console.WriteLine("File added");
                 }
             }
 
             return filePaths;
         }
 
-        static private void displayShortestRoadStripInfo(List<GpsData> data, double roadDistance)
+        static private void displayShortestRoadStripInfo(List<GpsRecord> data, double roadDistance)
         {
             TimeSpan shortestTime = TimeSpan.MaxValue;
-            Tuple<double, GpsData, GpsData> fastestData = null;
+            Tuple<double, GpsRecord, GpsRecord> fastestData = null;
 
             for (int i = 0; i < data.Count; i += 1)
             {
-                GpsData startingCoord = data[i];
-                GpsData coord = startingCoord;
+                GpsRecord startingCoord = data[i];
+                GpsRecord coord = startingCoord;
 
                 double distance = 0;
 
                 for (int j = i + 1; j < data.Count; j += 1)
                 {
-                    GpsData nextCoord = data[j];
+                    GpsRecord nextCoord = data[j];
                     distance += GeoCalculator.GetDistance(
                         coord.Latitude,
                         coord.Longitude,

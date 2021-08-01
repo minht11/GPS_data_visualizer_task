@@ -2,24 +2,26 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using GPS_data_visualizer_task.Gps.Readers;
 
-namespace GPS_data_visualizer_task.GpsParsers
+namespace GPS_data_visualizer_task.Gps
 {
-    class GpsParser
+    class GpsReader
     {
-        private static List<IParser> Parsers = new()
+        private static List<IReader> Parsers = new()
         {
-            new JsonParser(),
-            new CsvParser(),
-            new BinParser(),
+            new JsonReader(),
+            new CsvReader(),
+            new BinReader(),
         };
+
         static public bool IsSupportedFile(string filepath)
         {
             string ext = Path.GetExtension(filepath);
             return Parsers.Any(p => p.Supports(ext));
         }
 
-        static public List<GpsData> Parse(string filepath)
+        static public List<GpsRecord> Read(string filepath)
         {
             string ext = Path.GetExtension(filepath);
             foreach (var parser in Parsers)
@@ -30,7 +32,7 @@ namespace GPS_data_visualizer_task.GpsParsers
                 }
             }
 
-            throw new ArgumentException("No parsers support this file type.");
+            throw new ArgumentException("File type is not supported");
         }
     }
 }

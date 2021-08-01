@@ -3,17 +3,17 @@ using System.IO;
 using System;
 using System.Linq;
 
-namespace GPS_data_visualizer_task.GpsParsers
+namespace GPS_data_visualizer_task.Gps.Readers
 {
-    class BinParser : IParser
+    class BinReader : IReader
     {
         public bool Supports(string ext)
         {
             return ext.Equals(".bin");
         }
-        public List<GpsData> Parse(string filepath)
+        public List<GpsRecord> Parse(string filepath)
         {
-            List<GpsData> dataList = new();
+            List<GpsRecord> records = new();
 
             int offset = 0;
             byte[] bytes = File.ReadAllBytes(filepath);
@@ -30,24 +30,24 @@ namespace GPS_data_visualizer_task.GpsParsers
 
             while (offset < bytes.Length)
             {
-                GpsData data = new();
+                GpsRecord record = new();
 
-                data.Latitude = BitConverter.ToInt32(readBytes(4)) / 10000000.0;
-                data.Longitude = BitConverter.ToInt32(readBytes(4)) / 10000000.0;
+                record.Latitude = BitConverter.ToInt32(readBytes(4)) / 10000000.0;
+                record.Longitude = BitConverter.ToInt32(readBytes(4)) / 10000000.0;
 
                 long ms = BitConverter.ToInt64(readBytes(8));
-                data.GpsTime = DateTime.UnixEpoch.AddMilliseconds(ms);
+                record.GpsTime = DateTime.UnixEpoch.AddMilliseconds(ms);
 
-                data.Speed = BitConverter.ToInt16(readBytes(2));
-                data.Angle = BitConverter.ToInt16(readBytes(2));
-                data.Altitude = BitConverter.ToInt16(readBytes(2));
+                record.Speed = BitConverter.ToInt16(readBytes(2));
+                record.Angle = BitConverter.ToInt16(readBytes(2));
+                record.Altitude = BitConverter.ToInt16(readBytes(2));
 
-                data.Satellites = bytes[offset];
+                record.Satellites = bytes[offset];
                 offset += 1;
 
-                dataList.Add(data);
+                records.Add(record);
             }
-            return dataList;
+            return records;
         }
     }
 }
