@@ -20,14 +20,16 @@ namespace GPS_data_visualizer_task
             //};
 
             var paths = getInputedPaths();
-            var data = paths.SelectMany(GpsReader.Read).ToList();
+            var recordsList = paths.Select(GpsReader.Read).ToList();
+            var allRecords = recordsList.SelectMany((d) => d).ToList();
 
-            var satelitesList = data.Select((item) => item.Satellites).ToList();
-            var speedList = data.Select((item) => item.Speed).ToList();
-
+            // 3.   Draw histogram of sattelites data
+            var satelitesList = allRecords.Select((item) => item.Satellites).ToList();
             Console.Clear();
             Histograms.DrawVertical(satelitesList, 10, "hits");
 
+            // 4.	Draw histogram of speed data
+            var speedList = allRecords.Select((item) => item.Speed).ToList();
             Console.WriteLine();
             Histograms.DrawHorizontalRanges(
                 data: speedList,
@@ -37,7 +39,43 @@ namespace GPS_data_visualizer_task
                 valuesLabel: "hits");
 
             Console.WriteLine();
-            displayShortestRoadStripInfo(data, 100);
+
+            // 5.	Find the road section, along all records loaded from all files,
+            //      of at least 100 km long which was driven in the shortest time
+            const int minimumDistance = 100;
+
+            // The requirements were ambiguous if all records should be combined or treated separetly.
+            // Search them independently, because different files might contain unrelated data.
+            RoadSection? section = null;
+            foreach (var record in recordsList)
+            {
+                var newSection = findFastestRoadSection(record, minimumDistance);
+                if (section is null || newSection?.Duration < section.Duration)
+                {
+                    section = newSection;
+                }
+            }
+
+            if (section is not null)
+            {
+                Console.WriteLine($"Fastest road section of at least {minimumDistance}km was driven over {section.Duration.TotalSeconds:f3}s and was {section.Distance:f3}km long.");
+
+                GpsRecord startRecord = section.StartRecord;
+                GpsRecord endRecord = section.EndRecord;
+
+                const string startWord = "Start";
+                Console.WriteLine($"{startWord} position {startRecord.Latitude}; {startRecord.Longitude}");
+                Console.WriteLine($"{startWord} gps time {startRecord.GpsTime.ToString("yyyy-MM-dd hh:mm:ss")}");
+
+                string endWord = "End".PadRight(startWord.Length, ' ');
+                Console.WriteLine($"{endWord} position {endRecord.Latitude}; {endRecord.Longitude}");
+                Console.WriteLine($"{endWord} gps time {endRecord.GpsTime.ToString("yyyy-MM-dd hh:mm:ss")}");
+
+                Console.Write($"Average speed: {section.Distance / section.Duration.TotalHours:f1}km/h");
+            } else
+            {
+                Console.Write($"No road section was {minimumDistance}km long");
+            }
         }
 
         static private HashSet<string> getInputedPaths()
@@ -50,81 +88,85 @@ namespace GPS_data_visualizer_task
 
             while (true)
             {
-                string value = Console.ReadLine();
+                string? value = Console.ReadLine();
                 if (BEGIN_PARSE_COMMAND.Equals(value))
                 {
                     break;
                 }
 
-                if (!File.Exists(value))
+                if (value is not null)
                 {
-                    Console.WriteLine("No file found at inputed location");
-                }
-                else if (!GpsReader.IsSupportedFile(value))
-                {
-                    Console.WriteLine("File type is not supported");
-                }
-                else
-                {
-                    filePaths.Add(value);
-                    Console.WriteLine("File added");
+                    if (!File.Exists(value))
+                    {
+                        Console.WriteLine("No file found at inputed location");
+                    }
+                    else if (!GpsReader.IsSupportedFile(value))
+                    {
+                        Console.WriteLine("File type is not supported");
+                    }
+                    else
+                    {
+                        filePaths.Add(value);
+                        Console.WriteLine("File added");
+                    }
                 }
             }
 
             return filePaths;
         }
 
-        static private void displayShortestRoadStripInfo(List<GpsRecord> data, double roadDistance)
+        private class RoadSection
         {
-            TimeSpan shortestTime = TimeSpan.MaxValue;
-            Tuple<double, GpsRecord, GpsRecord> fastestData = null;
+            public TimeSpan Duration { get; init; }
+            public double Distance { get; init; }
+            // TODO. Assigning properties in concstructor would be a proper solution.
+#pragma warning disable CS8618 // Non-nullable
+            public GpsRecord StartRecord { get; init; }
+            public GpsRecord EndRecord { get; init; }
+#pragma warning restore CS8618 // Non-nullable
+        }
 
-            for (int i = 0; i < data.Count; i += 1)
+        static private RoadSection? findFastestRoadSection(List<GpsRecord> data, double roadDistance)
+        {
+            List<double> precomputedDistances = new();
+            for (int i = 0; i < data.Count - 1; i += 1)
             {
-                GpsRecord startingCoord = data[i];
-                GpsRecord coord = startingCoord;
+                var start = data[i];
+                var end = data[i + 1];
+                var distance = GeoCalculator.GetDistance(start.Latitude, start.Longitude, end.Latitude, end.Longitude, 1, DistanceUnit.Kilometers);
+                precomputedDistances.Add(distance);
+            }
 
+            RoadSection? measurements = null;
+            TimeSpan shortestTime = TimeSpan.MaxValue;
+            for (int i = 0; i < precomputedDistances.Count; i += 1)
+            {
                 double distance = 0;
-
-                for (int j = i + 1; j < data.Count; j += 1)
+                for (int j = i; j < precomputedDistances.Count; j += 1)
                 {
-                    GpsRecord nextCoord = data[j];
-                    distance += GeoCalculator.GetDistance(
-                        coord.Latitude,
-                        coord.Longitude,
-                        nextCoord.Latitude,
-                        nextCoord.Longitude,
-                        1,
-                        DistanceUnit.Kilometers);
-                    coord = nextCoord;
-                    TimeSpan time = coord.GpsTime - startingCoord.GpsTime;
+                    distance += precomputedDistances[j];
+
+                    TimeSpan time = data[j].GpsTime - data[i].GpsTime;
                     bool isMoreThanShortestTime = time > shortestTime;
                     if (distance >= roadDistance || isMoreThanShortestTime)
                     {
                         if (!isMoreThanShortestTime)
                         {
                             shortestTime = time;
-                            fastestData = Tuple.Create(distance, startingCoord, coord);
+                            measurements = new()
+                            {
+                                Distance = distance,
+                                Duration = time,
+                                StartRecord = data[i],
+                                EndRecord = data[j],
+                            };
                         }
                         break;
                     }
                 }
             }
 
-            if (fastestData != null)
-            {
-                Console.WriteLine($"Fastest road section of at least 100km was driven over {shortestTime.TotalSeconds:f3}s and was {fastestData.Item1:f3}km long.");
-
-                const string startWord = "Start";
-                Console.WriteLine($"{startWord} position {fastestData.Item2.Latitude}; {fastestData.Item2.Longitude}");
-                Console.WriteLine($"{startWord} gps time {fastestData.Item2.GpsTime}");
-
-                string endWord = "End".PadRight(startWord.Length, ' ');
-                Console.WriteLine($"{endWord} position {fastestData.Item3.Latitude}; {fastestData.Item3.Longitude}");
-                Console.WriteLine($"{endWord} gps time {fastestData.Item3.GpsTime}");
-
-                Console.Write($"Average speed: {fastestData.Item1 / shortestTime.TotalHours:f1}km/h");
-            }
+            return measurements;
         }
     }
 }

@@ -28,11 +28,16 @@ namespace GPS_data_visualizer_task.Gps
             {
                 if (parser.Supports(ext))
                 {
-                    return parser.Parse(filepath);
+                    var value = parser.Parse(filepath);
+                    if (value is not null and List<GpsRecord> v)
+                    {
+                        return v;
+                    }
                 }
             }
 
-            throw new ArgumentException("File type is not supported");
+            //throw new ArgumentException("File type is not supported or file is empty");
+            return new List<GpsRecord>();
         }
     }
 }

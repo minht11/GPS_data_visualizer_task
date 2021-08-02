@@ -10,7 +10,7 @@ namespace GPS_data_visualizer_task.Gps.Readers
         {
             return ext.Equals(".csv");
         }
-        public List<GpsRecord> Parse(string filepath)
+        public List<GpsRecord>? Parse(string filepath)
         {
             List<GpsRecord> records = new();
 

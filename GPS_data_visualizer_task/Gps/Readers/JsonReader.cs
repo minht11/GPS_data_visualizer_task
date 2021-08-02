@@ -10,7 +10,7 @@ namespace GPS_data_visualizer_task.Gps.Readers
         {
             return ext.Equals(".json");
         }
-        public List<GpsRecord> Parse(string filepath)
+        public List<GpsRecord>? Parse(string filepath)
         {
             string jsonString = File.ReadAllText(filepath);
             return JsonSerializer.Deserialize<List<GpsRecord>>(jsonString);
