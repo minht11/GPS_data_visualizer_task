@@ -81,7 +81,7 @@ namespace GPS_data_visualizer_task
         static private HashSet<string> getInputedPaths()
         {
             const string BEGIN_PARSE_COMMAND = "parse";
-            Console.WriteLine("Enter absolute file path and press 'Enter'");
+            Console.WriteLine("Enter absolute file paths, between each path press 'Enter'");
             Console.WriteLine($"Once finished type '{BEGIN_PARSE_COMMAND}' to begin parsing");
 
             HashSet<string> filePaths = new();
@@ -119,7 +119,7 @@ namespace GPS_data_visualizer_task
         {
             public TimeSpan Duration { get; init; }
             public double Distance { get; init; }
-            // TODO. Assigning properties in concstructor would be a proper solution.
+            // TODO. Assigning properties in constructor would be a proper solution.
 #pragma warning disable CS8618 // Non-nullable
             public GpsRecord StartRecord { get; init; }
             public GpsRecord EndRecord { get; init; }
@@ -137,7 +137,7 @@ namespace GPS_data_visualizer_task
                 precomputedDistances.Add(distance);
             }
 
-            RoadSection? measurements = null;
+            RoadSection? section = null;
             TimeSpan shortestTime = TimeSpan.MaxValue;
             for (int i = 0; i < precomputedDistances.Count; i += 1)
             {
@@ -153,7 +153,7 @@ namespace GPS_data_visualizer_task
                         if (!isMoreThanShortestTime)
                         {
                             shortestTime = time;
-                            measurements = new()
+                            section = new()
                             {
                                 Distance = distance,
                                 Duration = time,
@@ -166,7 +166,7 @@ namespace GPS_data_visualizer_task
                 }
             }
 
-            return measurements;
+            return section;
         }
     }
 }
