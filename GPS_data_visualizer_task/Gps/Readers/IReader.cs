@@ -6,6 +6,6 @@ namespace GPS_data_visualizer_task.Gps.Readers
     {
         public bool Supports(string ext);
 
-        public List<GpsRecord>? Parse(string filepath);
+        public List<GpsRecord>? Read(string filepath);
     }
 }

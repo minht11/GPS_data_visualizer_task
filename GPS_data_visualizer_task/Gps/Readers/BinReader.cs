@@ -11,7 +11,7 @@ namespace GPS_data_visualizer_task.Gps.Readers
         {
             return ext.Equals(".bin");
         }
-        public List<GpsRecord>? Parse(string filepath)
+        public List<GpsRecord>? Read(string filepath)
         {
             List<GpsRecord> records = new();
 

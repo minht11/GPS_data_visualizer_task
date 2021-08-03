@@ -6,95 +6,94 @@ namespace GPS_data_visualizer_task
 {
     class Histograms
     {
-        static protected Dictionary<int, int> getDictionaryFromList(List<int> list, Func<int, int> groupFn)
+        static private Dictionary<int, int> GetDictionaryFromList(List<int> list, Func<int, int> groupFn)
         {
             return list.GroupBy(groupFn).ToDictionary((item) => item.Key, (item) => item.Count());
         }
 
-        static public void DrawVertical(List<int> dataList, int height, string yAxisName)
+        static private string MakeStringFixedSize(string value, int maxLength, char fillChar = ' ')
+        {
+            return value.Length <= maxLength
+                ? value.PadRight(maxLength, fillChar)
+                : value.Substring(0, maxLength);
+        }
+
+        static private void Setup()
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.WriteLine();
+        }
 
-            var data = getDictionaryFromList(dataList, (a) => a);
+        static public void DisplayVertical(List<int> dataList, int height, string yAxisLabel)
+        {
+            Setup();
 
-            int maxKey = data.Keys.Max() + 1;
+            var data = GetDictionaryFromList(dataList, (a) => a);
+
+            int width = data.Keys.Max() + 1;
             int maxValue = data.Values.Max();
             int cellHeight = maxValue / height;
 
             for (int i = height; i >= 0; i -= 1)
             {
-                string line = "";
                 int currentHeight = i * cellHeight;
-                for (int j = 0; j < maxKey; j += 1)
+                string line = Enumerable.Range(0, width).Select((j) =>
                 {
                     data.TryGetValue(j, out var value);
 
-                    char symbol = ' ';
-                    if (i == 0 && value == 0)
-                    {
-                        symbol = '_';
-                    }
-                    else if (value >= currentHeight)
-                    {
-                        symbol = '▒';
-                    }
-
-                    line += "".PadRight(2, symbol).PadRight(3, ' ');
-                }
+                    if (i == 0 && value == 0) return '_';
+                    if (value >= currentHeight) return '▒';
+                    return ' ';
+                }).Aggregate("", (curr, s) => curr + " ".PadLeft(3, s));
 
                 if (i == height)
                 {
-                    line += $"{maxValue} {yAxisName}";
+                    line += $"{maxValue} {yAxisLabel}";
                 }
                 else if (i == 0)
                 {
-                    line += $"0 {yAxisName}";
+                    line += $"0 {yAxisLabel}";
                 }
                 Console.WriteLine(line);
             }
-            for (int i = 0; i < maxKey; i += 1)
+
+            for (int i = 0; i < width; i += 1)
             {
                 Console.Write("{0,2:D2} ", i);
             }
             Console.Write("\n");
         }
 
-        static public void DrawHorizontalRanges(List<int> data, int intervalSize, int width, string title, string valuesLabel)
+        static public void DisplayHorizontalRanges(List<int> data, int intervalSize, int width, string title, string valuesLabel)
         {
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Setup();
 
             var groupedData = new SortedDictionary<int, int>(
-                getDictionaryFromList(data, (value) => value - value % intervalSize)
+                GetDictionaryFromList(data, (value) => value - value % intervalSize)
             );
 
-            int maxKey = groupedData.Keys.Max();
             int maxValue = groupedData.Values.Max();
             double cellWidth = 1.0 * maxValue / width;
 
-            int maxRangesDigitsCount = $"{maxKey}".Length;
+            int maxRangesDigitsCount = $"{groupedData.Keys.Max()}".Length;
 
-            bool isTitleDrawed = false;
+            bool isTitleDisplayed = false;
             foreach (var item in groupedData)
             {
                 int key = item.Key;
                 int value = item.Value;
 
-                string leftRange = $"{key}".PadLeft(maxRangesDigitsCount, ' ');
-                string rightRange = $"{key + intervalSize - 1}".PadLeft(maxRangesDigitsCount, ' ');
+                string leftRangeLabel = $"{key}".PadLeft(maxRangesDigitsCount, ' ');
+                string rightRangeLabel = $"{key + intervalSize - 1}".PadLeft(maxRangesDigitsCount, ' ');
 
                 int barFilledWidth = Convert.ToInt32(Math.Ceiling(value / cellWidth));
                 string bar = "".PadRight(barFilledWidth, '▒').PadRight(width, ' ');
 
-                string mainContentLine = $"[{leftRange} - {rightRange}] ¦ {bar} ";
-                if (!isTitleDrawed)
+                string mainContentLine = $"[{leftRangeLabel} - {rightRangeLabel}] ¦ {bar} ";
+                if (!isTitleDisplayed)
                 {
-                    isTitleDrawed = true;
-
-                    title += " ";
-                    int maxLen = mainContentLine.Length;
-
-                    // Make sure title always fills the available space, otherwise trim it.
-                    string mainTitle = title.Length <= maxLen ? title.PadRight(maxLen, '─') : title.Substring(0, maxLen);
+                    isTitleDisplayed = true;
+                    string mainTitle = MakeStringFixedSize($"{title} ", mainContentLine.Length, '─');
                     Console.WriteLine($"{mainTitle}¦ {valuesLabel}");
                 }
 

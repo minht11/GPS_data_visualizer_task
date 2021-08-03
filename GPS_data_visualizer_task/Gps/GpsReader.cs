@@ -8,7 +8,7 @@ namespace GPS_data_visualizer_task.Gps
 {
     class GpsReader
     {
-        private static List<IReader> Parsers = new()
+        private static List<IReader> Readers = new()
         {
             new JsonReader(),
             new CsvReader(),
@@ -18,26 +18,25 @@ namespace GPS_data_visualizer_task.Gps
         static public bool IsSupportedFile(string filepath)
         {
             string ext = Path.GetExtension(filepath);
-            return Parsers.Any(p => p.Supports(ext));
+            return Readers.Any(p => p.Supports(ext));
         }
 
         static public List<GpsRecord> Read(string filepath)
         {
             string ext = Path.GetExtension(filepath);
-            foreach (var parser in Parsers)
+            foreach (var reader in Readers)
             {
-                if (parser.Supports(ext))
+                if (reader.Supports(ext))
                 {
-                    var value = parser.Parse(filepath);
-                    if (value is not null and List<GpsRecord> v)
+                    var value = reader.Read(filepath);
+                    if (value is not null)
                     {
-                        return v;
+                        return value;
                     }
                 }
             }
 
-            //throw new ArgumentException("File type is not supported or file is empty");
-            return new List<GpsRecord>();
+            throw new ArgumentException("File type is not supported or file is empty");
         }
     }
 }
