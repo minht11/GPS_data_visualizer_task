@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using GPS_data_visualizer_task.Gps;
+using GPS_data_visualizer_task.Histograms;
 
 namespace GPS_data_visualizer_task
 {
@@ -69,19 +70,24 @@ namespace GPS_data_visualizer_task
 
         static private void DisplaySatellitesHistogram(List<GpsRecord> records)
         {
-            var data = records.Select((item) => item.Satellites).ToList();
-            Histograms.DisplayVertical(data, 10, "hits");
+            Histogram.Vertical.Display(new()
+            {
+                Data = records.Select((item) => item.Satellites).ToList(),
+                Height = 10,
+                YAxisLabel = "hits",
+            });
         }
 
         static private void DisplaySpeedHistogram(List<GpsRecord> records)
         {
-            var data = records.Select((item) => item.Speed).ToList();
-            Histograms.DisplayHorizontalRanges(
-                data,
-                intervalSize: 10,
-                width: 20,
-                title: "Speed histogram",
-                valuesLabel: "hits");
+            Histogram.RangesHorizontal.Display(new()
+            {
+                Data = records.Select((item) => item.Speed).ToList(),
+                IntervalSize = 10,
+                Width = 20,
+                Title = "Speed histogram",
+                ValuesLabel = "hits",
+            });
         }
 
         static private void DisplayFastest100kmRoadSection(List<List<GpsRecord>> recordsList)
@@ -93,7 +99,7 @@ namespace GPS_data_visualizer_task
 
             if (section != null)
             {
-                Console.WriteLine($"\nFastest road section of at least {minimumDistance}km was driven over {section.Duration.TotalSeconds:f3}s and was {section.Distance:f3}km long.");
+                Console.WriteLine($"Fastest road section of at least {minimumDistance}km was driven over {section.Duration.TotalSeconds:f3}s and was {section.Distance:f3}km long.");
 
                 GpsRecord startRecord = section.StartRecord;
                 GpsRecord endRecord = section.EndRecord;
