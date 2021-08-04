@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace GPS_data_visualizer_task.Histograms
 {
-    internal class HVertical : HBase<HVertical.DisplayOptions>
+    class HVertical : HBase<HVertical.DisplayOptions>
     {
         public class DisplayOptions
         {

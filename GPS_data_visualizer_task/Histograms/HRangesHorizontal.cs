@@ -4,15 +4,15 @@ using System.Linq;
 
 namespace GPS_data_visualizer_task.Histograms
 {
-    internal class HRangesHorizontal : HBase<HRangesHorizontal.DisplayOptions>
+    class HRangesHorizontal : HBase<HRangesHorizontal.DisplayOptions>
     {
         public class DisplayOptions
         {
-            public List<int> Data = new();
-            public int Width;
-            public int IntervalSize;
-            public string Title = "";
-            public string ValuesLabel = "";
+            public List<int> Data { get; set; } = new();
+            public int Width { get; set; }
+            public int IntervalSize { get; set; }
+            public string Title { get; set; } = "";
+            public string ValuesLabel { get; set; } = "";
         }
 
         override protected void DisplayImplementation(DisplayOptions options)
